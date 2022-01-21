@@ -28,9 +28,9 @@ class Timer {
                 let mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
                 let secs = Math.floor((ms % (1000 * 60)) / 1000);
 
-                console.log(` Осталось ${days} дней ${hours} часов ${mins}  минут ${secs}  секунд`)
+                console.log(colors.yellow(`Осталось ${days} дней ${hours} часов ${mins}  минут ${secs}  секунд`))
             } else {
-                console.log('Завершение работы')
+                console.log(colors.green('Завершение работы'))
                 clearInterval(timeId)
             }
         }, 1000);
@@ -45,6 +45,6 @@ for (let i = 0; i < args.length; i++) {
             timer.showTimer()
         })
     } else {
-        console.log(colors.red(`Введите ${i+1} аргумент в формате час-день-месяц-год`))
+        console.log(colors.red(`Исправьте ${i+1} аргумент в формате час-день-месяц-год. Пример 10-01-01-2022`))
     }
 }
