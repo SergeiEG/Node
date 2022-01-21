@@ -12,20 +12,38 @@ class Timer {
         let result = str.replace(regexp, (match, hour, day, month, year) => `${year}-${month}-${day}T${hour}`)
         result = result + ':00:00.000'
         let date = Date.parse(result)
-        console.log(date)
         return date
     }
     calcTime() {
         let start = Date.now()
         let end = this.getDateFromArgs(this.futureDate)
-        console.log(start - end)
+        return end - start
+    }
+    showTimer() {
+        const timeId = setInterval(() => {
+            let ms = this.calcTime()
+            if (ms > 0) {
+                let days = Math.floor(ms / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                let secs = Math.floor((ms % (1000 * 60)) / 1000);
+
+                console.log(` Осталось ${days} дней ${hours} часов ${mins}  минут ${secs}  секунд`)
+            } else {
+                console.log('Завершение работы')
+                clearInterval(timeId)
+            }
+        }, 1000);
     }
 }
 
 
 for (let i = 0; i < args.length; i++) {
     if (regexp.test(args[i])) {
-        let timer = new Timer(args[i])
+        setTimeout(() => {
+            let timer = new Timer(args[i])
+            timer.showTimer()
+        })
     } else {
         console.log(colors.red(`Введите ${i+1} аргумент в формате час-день-месяц-год`))
     }
