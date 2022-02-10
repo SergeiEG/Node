@@ -1,56 +1,53 @@
+const socket = require('socket.io');
 const http = require('http');
-const path = require('path');
 const fs = require('fs');
-
-let dirCatalog = '';
-let fullPath = process.cwd();
-
-function getCatalog(pth) {
-    dirCatalog = ''
-    const fileList = fs.readdirSync(pth);
-    fileList.forEach(el => {
-        dirCatalog += `<div><a href="${el}">${el}</a></div> `
-    })
-};
+const path = require('path');
 
 const server = http.createServer((req, res) => {
-    let fileName = '';
-    if (req.url === '/') {
-        fullPath = process.cwd();
-        getCatalog(fullPath);
-        res.writeHead(200, {
-            'Content-Type': 'text/html',
-        });
-        res.write('<a href="/up">../</a> \n');
-        res.end(`<html><body>${dirCatalog}</body></html>`);
-    } else if (req.url === '/up') {
-        let dirNameArr = [];
-        if (fullPath !== process.cwd()) {
-            dirNameArr = fullPath.split("\\");
-            dirNameArr.pop();
-            fullPath = dirNameArr.join("\\");
-            getCatalog(fullPath);
-            res.writeHead(200, {
-                'Content-Type': 'text/html',
-            });
-            res.write('<a href="/up">../</a> \n');
-            res.end(`<html><body>${dirCatalog}</body></html>`);
-        }
-    } else {
-        fileName = req.url.slice(1);
-        fullPath = path.join(fullPath, fileName);
-        if (fs.lstatSync(fullPath).isDirectory()) {
-            getCatalog(fullPath);
-            res.writeHead(200, {
-                'Content-Type': 'text/html',
-            });
-            res.write('<a href="/up">../</a> \n');
-            res.end(`<html><body>${dirCatalog}</body></html>`);
-        } else {
-            const data = fs.readFileSync(fullPath, 'utf-8');
-            res.end(data);
-        }
-        console.log(fullPath);
-    }
+    const indexPath = path.join(__dirname, 'index.html');
+    const readStream = fs.createReadStream(indexPath);
+
+    readStream.pipe(res);
 });
+
+const io = socket(server);
+
+let userList = [];
+
+io.on('connection', (client) => {
+    let userName = '';
+    client.on('userNameConnect', (name) => {
+        userName = name;
+        userList.push(userName);
+        const data = {
+            message: `User ${userName} has connected`
+        }
+
+        client.broadcast.emit('server-msg', data);
+        client.emit('user-check', userList)
+        client.broadcast.emit('user-check', userList);
+    });
+
+    client.on('disconnect', () => {
+        const data = {
+            message: `User ${userName} has disconnected`
+        }
+
+        client.broadcast.emit('server-msg', data);
+        userList.splice(userList.indexOf(userName), 1)
+        client.emit('user-check', userList)
+        client.broadcast.emit('user-check', userList);
+    });
+
+    client.on('reconnect', () => {
+        client.broadcast.emit('server-msg', data);
+    });
+
+    client.on('client-msg', (data) => {
+        client.broadcast.emit('user-msg', data);
+        client.emit('user-msg', data);
+    });
+
+});
+
 server.listen(8080);
